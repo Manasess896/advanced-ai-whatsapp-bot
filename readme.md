@@ -1,6 +1,6 @@
 # 🤖 Intelligent WhatsApp Bot with AI & Location Detection
 
-A production-ready WhatsApp bot powered by Groq AI, featuring intelligent conversations, persistent memory, location detection, and comprehensive user management. Built with Flask and designed for easy deployment to cloud platforms.
+A WhatsApp bot powered by Groq API and open ai model, featuring intelligent conversations, persistent memory, location detection, and comprehensive user management.
 
 [![Python](https://img.shields.io/badge/Python-3.8%2B-blue?logo=python)](https://python.org)
 [![Flask](https://img.shields.io/badge/Flask-3.0%2B-green?logo=flask)](https://flask.palletsprojects.com)
@@ -8,7 +8,7 @@ A production-ready WhatsApp bot powered by Groq AI, featuring intelligent conver
 [![Groq](https://img.shields.io/badge/AI-Groq%20LLaMA-orange)](https://groq.com)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-🔗 **Open Source:** Available on GitHub at [https://github.com/Manasess896/Whatsapp-Bot](https://github.com/Manasess896/Whatsapp-Bot)
+🔗 **Open Source:** Available on GitHub at [https://github.com/Manasess896/advanced-ai-whatsapp-bot](https://github.com/Manasess896/advanced-ai-whatsapp-bot)
 
 ---
 
@@ -169,48 +169,6 @@ ngrok http 5000
 
 ---
 
-## 🚀 Production Deployment
-
-### **Heroku Deployment** (Recommended)
-
-```bash
-# Install Heroku CLI
-# Visit: https://devcenter.heroku.com/articles/heroku-cli
-
-# Login and create app
-heroku login
-heroku create your-bot-name
-
-# Set environment variables
-heroku config:set WHATSAPP_TOKEN=your_token
-heroku config:set PHONE_NUMBER_ID=your_phone_id
-heroku config:set VERIFY_TOKEN=your_verify_token
-heroku config:set GROQ_API_KEY=your_groq_key
-heroku config:set MONGODB_URI=your_mongodb_uri
-heroku config:set DATABASE_NAME=whatsapp_bot
-heroku config:set COLLECTION_NAME=conversations
-# ... add all other variables
-
-# Deploy
-git push heroku main
-
-# Set webhook URL in Meta dashboard to:
-# https://your-bot-name.herokuapp.com/webhook
-```
-
-### **Railway Deployment**
-
-1. Connect your GitHub repository to [Railway](https://railway.app)
-2. Add all environment variables in Railway dashboard
-3. Deploy automatically on git push
-
-### **Other Platforms**
-
-- **Render:** Simple deployment with free tier
-- **DigitalOcean App Platform:** Production-ready hosting
-- **AWS Elastic Beanstalk:** Enterprise-scale deployment
-
----
 
 ## 🔧 Development Features
 
@@ -221,19 +179,6 @@ git push heroku main
 python worker.py
 ```
 
-### **Environment Management**
-
-- Secure `.env` file handling
-- Environment-specific configurations
-- Debug mode toggle
-
-### **Logging & Monitoring**
-
-- Structured logging with timestamps
-- Error tracking with unique IDs
-- Performance monitoring
-
----
 
 ## 🧠 AI & Intelligence Features
 
@@ -373,13 +318,6 @@ python worker.py
    GROQ_API_KEY=gsk_your_api_key_here
    ```
 
-3. **Test AI Connection:**
-   ```python
-   from groq import Groq
-   client = Groq(api_key="your_api_key")
-   # Bot will automatically test connection on startup
-   ```
-
 ### 🗄️ **MongoDB Atlas Configuration**
 
 1. **Create Cluster:**
@@ -402,33 +340,6 @@ python worker.py
    ```env
    MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/database_name
    ```
-
----
-
-## 🔒 Privacy & Legal Framework
-
-### **Built-in Legal Compliance**
-
-- ✅ **GDPR Compliant:** Transparent data collection and processing
-- ✅ **Privacy Policy:** Comprehensive data handling disclosure
-- ✅ **Terms of Service:** User agreement and liability protection
-- ✅ **Data Rights:** User data access and deletion procedures
-- ✅ **Consent Management:** Automatic terms acceptance workflow
-
-### **Privacy Features**
-
-- **Data Isolation:** Per-user data access controls
-- **Secure Storage:** Encrypted data transmission and storage
-- **Minimal Collection:** Only necessary data is stored
-- **Retention Limits:** Configurable message history limits
-- **Audit Logging:** Comprehensive activity logging
-
-### **User Rights**
-
-- **Access:** Users can request their data
-- **Deletion:** Contact developer for data removal
-- **Portability:** Data export capabilities
-- **Correction:** Update personal information
 
 ---
 
@@ -496,38 +407,7 @@ ERROR_MESSAGES = {
 
 ---
 
-## 🔧 Troubleshooting Guide
 
-### **Common Issues & Solutions**
-
-| Issue                  | Cause                  | Solution                               |
-| ---------------------- | ---------------------- | -------------------------------------- |
-| Bot not responding     | Missing `GROQ_API_KEY` | Add valid Groq API key to `.env`       |
-| Database errors        | MongoDB connection     | Check `MONGODB_URI` and network access |
-| Webhook failures       | Wrong URL/token        | Verify webhook URL and `VERIFY_TOKEN`  |
-| Location detection off | Country codes missing  | Ensure `codes.json` file exists        |
-| Memory issues          | High `MEMORY_LIMIT`    | Reduce limit or optimize queries       |
-
-### **Debug Mode**
-
-```env
-DEBUG_LOGS=true  # Enable detailed logging
-```
-
-### **Health Check Commands**
-
-```bash
-# Test MongoDB connection
-python -c "from pymongo import MongoClient; print('Connected!' if MongoClient('your_uri').admin.command('ping') else 'Failed')"
-
-# Test Groq API
-python -c "from groq import Groq; print('AI Ready!' if Groq(api_key='your_key') else 'Failed')"
-
-# Test WhatsApp API
-curl -X GET "https://graph.facebook.com/v21.0/me?access_token=YOUR_TOKEN"
-```
-
----
 
 ## 📊 Performance & Scaling
 
@@ -540,81 +420,6 @@ curl -X GET "https://graph.facebook.com/v21.0/me?access_token=YOUR_TOKEN"
 
 ### **Monitoring & Analytics**
 
-```python
-# Built-in user statistics
-stats = get_user_stats(user_id)
-# Returns: message counts, first/last message times, user info
-
-# All users overview
-all_users = get_all_users()
-# Returns: sorted list of all users with statistics
-```
-
-### **Production Considerations**
-
-- Use environment-specific configurations
-- Implement proper logging and monitoring
-- Set up automated backups for MongoDB
-- Use process managers (PM2, systemd) for reliability
-- Implement health checks and restart policies
-
----
-
-## 🤝 Contributing
-
-We welcome contributions! Here's how to get involved:
-
-### **Setup Development Environment**
-
-```bash
-# Fork and clone the repository
-git clone https://github.com/yourusername/Whatsapp-Bot.git
-cd Whatsapp-Bot
-
-# Create virtual environment
-python -m venv venv
-source venv/bin/activate  # Linux/Mac
-# or
-venv\Scripts\activate     # Windows
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Set up environment variables
-cp .env.example .env
-# Fill in your API keys and configuration
-```
-
-### **Development Guidelines**
-
-- Follow PEP 8 style guidelines
-- Add comprehensive docstrings
-- Write tests for new features
-- Update documentation for changes
-- Use meaningful commit messages
-
-### **Pull Request Process**
-
-1. Create a feature branch: `git checkout -b feature-name`
-2. Make your changes and test thoroughly
-3. Update documentation if needed
-4. Submit a pull request with detailed description
-
----
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
----
-
-## 📞 Support & Community
-
-- **GitHub Issues:** [Report bugs](https://github.com/Manasess896/Whatsapp-Bot/issues)
-- **Discussions:** [Feature requests & help](https://github.com/Manasess896/Whatsapp-Bot/discussions)
-- **Email:** manasesskamau1053@gmail.com
-- **WhatsApp:** +254114471302
-
 ---
 
 ## 🙏 Acknowledgments
@@ -625,73 +430,3 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **[Flask](https://flask.palletsprojects.com/)** - Lightweight web framework
 - **Open Source Community** - For inspiration and support
 
----
-
-<div align="center">
-
-**⭐ Star this repo if you found it helpful!**
-
-**[🚀 Deploy Now](https://heroku.com/deploy)** | **[📖 Documentation](https://github.com/Manasess896/Whatsapp-Bot/wiki)** | **[💬 Support](https://github.com/Manasess896/Whatsapp-Bot/discussions)**
-
-_Built with ❤️ by developers, for developers_
-
-</div>
-
-1. Go to [Meta Business Dashboard](https://business.facebook.com/)
-2. Open **Meta Business Settings**
-3. Ensure you're in the correct Business Account with your WhatsApp number
-
-### Step 2: Check User Roles
-
-1. Navigate to **Accounts → WhatsApp Accounts**
-2. Select your WhatsApp account
-3. Ensure your system user has **Admin** access
-
-⚠️ **Important:** Without proper roles, you won't be able to generate a valid token.
-
-### Step 3: Create System User
-
-1. Go to **Users → System Users**
-2. Add new system user (e.g., `whatsapp-bot-user`)
-3. Assign **Admin** role
-
-### Step 4: Configure Permissions
-
-1. In **System User → Assign Assets**, attach your WhatsApp account
-2. Grant required permissions:
-   - `whatsapp_business_messaging`
-   - `whatsapp_business_management`
-3. Save changes
-
-### Step 5: Generate Token
-
-1. In System User section, click **Generate Token**
-2. Select your WhatsApp App
-3. Choose required permissions
-4. Select **Never Expire** (if available)
-5. Copy token to your `.env` file
-
-## 🚀 Deployment
-
-For production deployment:
-
-1. **Use environment variables** for all sensitive data
-2. **Enable HTTPS** with proper SSL certificates
-3. **Set up monitoring** using the admin endpoints
-4. **Configure MongoDB Atlas** with proper security settings
-5. **Use system user tokens** for reliability
-
-## 🤝 Contributing
-
-This is an open-source project! Contributions are welcome:
-
-1. Fork the repository on [GitHub](https://github.com/Manasess896/Whatsapp-Bot)
-2. Create a feature branch
-3. Make your improvements
-4. Submit a pull request
-
-## 📞 Support
-
-- **Issues:** Report bugs on [GitHub Issues](https://github.com/Manasess896/Whatsapp-Bot/issues)
-- **Data Deletion:** Contact developer email (set in `DEVELOPER_EMAIL`)
-- **Documentation:** This README and inline code comments
