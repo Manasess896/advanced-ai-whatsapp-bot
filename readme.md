@@ -1,4 +1,4 @@
-# 🤖 Intelligent WhatsApp Bot with AI & Location Detection
+# Intelligent WhatsApp Bot with AI & Location Detection
 
 A WhatsApp bot powered by Groq API and open ai model, featuring intelligent conversations, persistent memory, location detection, and comprehensive user management.
 
@@ -8,41 +8,41 @@ A WhatsApp bot powered by Groq API and open ai model, featuring intelligent conv
 [![Groq](https://img.shields.io/badge/AI-Groq%20LLaMA-orange)](https://groq.com)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-🔗 **Open Source:** Available on GitHub at [https://github.com/Manasess896/advanced-ai-whatsapp-bot](https://github.com/Manasess896/advanced-ai-whatsapp-bot)
+**Open Source:** Available on GitHub at [https://github.com/Manasess896/advanced-ai-whatsapp-bot](https://github.com/Manasess896/advanced-ai-whatsapp-bot)
 
 ---
 
-## ✨ Key Features
+## Key Features
 
-### 🧠 **AI & Intelligence**
+### **AI & Intelligence**
 
 - **Advanced AI Models:** Powered by Groq's high-performance LLaMA models
 - **Context-Aware Conversations:** Remembers conversation history for natural dialogue
 - **Smart Memory Management:** Configurable message history limits for optimal performance
 - **Fallback Handling:** Graceful error handling with user-friendly messages
 
-### 🌍 **Location & Personalization**
+### **Location & Personalization**
 
 - **Automatic Location Detection:** Identifies user's country from phone number
 - **Location-Aware Responses:** Culturally appropriate and region-specific replies
 - **Country Code Database:** Comprehensive database of 200+ country codes
 - **Persistent User Profiles:** Stores user preferences and location data
 
-### 🔒 **Privacy & Security**
+### **Privacy & Security**
 
 - **GDPR Compliant:** Built-in privacy policy and data handling
 - **User Data Isolation:** Strict per-user data access controls
 - **Secure Error Handling:** No sensitive data leaked in error messages
 - **Legal Framework:** Comprehensive Terms of Service included
 
-### 📊 **Management & Monitoring**
+### **Management & Monitoring**
 
 - **Real-time Statistics:** Track messages, users, and engagement
 - **User Management:** Individual user profiles and conversation stats
 - **Admin Endpoints:** Built-in admin dashboard for monitoring
 - **Comprehensive Logging:** Detailed logs with error tracking
 
-### 🚀 **Developer Experience**
+### **Developer Experience**
 
 - **Easy Deployment:** One-click deployment to Heroku, Railway, or any cloud platform
 - **Development Mode:** Auto-restart functionality for seamless development
@@ -51,7 +51,7 @@ A WhatsApp bot powered by Groq API and open ai model, featuring intelligent conv
 
 ---
 
-## 📋 Prerequisites
+## Prerequisites
 
 Before you begin, ensure you have:
 
@@ -61,14 +61,14 @@ Before you begin, ensure you have:
 - **Meta for Developers** account for WhatsApp Cloud API
 - **Groq API** account for AI capabilities
 
-### 📊 Free Tier Limits
+### Free Tier Limits
 
 - **MongoDB Atlas:** 512MB storage (sufficient for thousands of conversations)
 - **Groq API:** Generous free tier with high-speed inference
 - **WhatsApp Cloud API:** 1000 free messages per month
 - **Heroku/Railway:** Free hosting with some limitations
 
-## 🚀 Quick Start
+## Quick Start
 
 ### 1. **Clone & Install**
 
@@ -114,7 +114,7 @@ MEMORY_LIMIT=30
 DEBUG_LOGS=false
 ```
 
-> 💡 **Security Tip:** Generate a secure verify token:
+> **Security Tip:** Generate a secure verify token:
 >
 > ```python
 > import secrets; print(secrets.token_hex(16))
@@ -122,7 +122,7 @@ DEBUG_LOGS=false
 
 ### 3. **Service Setup**
 
-#### 📱 **WhatsApp Cloud API Setup**
+#### **WhatsApp Cloud API Setup**
 
 1. Visit [Meta for Developers](https://developers.facebook.com/apps)
 2. Create a new app → Business → WhatsApp
@@ -130,13 +130,13 @@ DEBUG_LOGS=false
 4. Add webhook URL: `https://your-domain.com/webhook`
 5. Subscribe to `messages` webhook field
 
-#### 🤖 **Groq AI Setup**
+#### **Groq AI Setup**
 
 1. Sign up at [Groq Console](https://console.groq.com/keys)
 2. Generate an API key
 3. Add to your `.env` file
 
-#### 🗄️ **MongoDB Atlas Setup**
+#### **MongoDB Atlas Setup**
 
 1. Create account at [MongoDB Atlas](https://mongodb.com/atlas)
 2. Create a free M0 cluster
@@ -170,7 +170,7 @@ ngrok http 5000
 ---
 
 
-## 🔧 Development Features
+## Development Features
 
 ### **Auto-Restart Development**
 
@@ -180,7 +180,7 @@ python worker.py
 ```
 
 
-## 🧠 AI & Intelligence Features
+## AI & Intelligence Features
 
 ### **Advanced AI Capabilities**
 
@@ -205,7 +205,7 @@ python worker.py
 
 ---
 
-## 📊 Database Structure & Collections
+## Database Structure & Collections
 
 ### **Conversations Collection**
 
@@ -245,7 +245,7 @@ python worker.py
 
 ---
 
-## 🛠️ API Endpoints
+## API Endpoints
 
 ### **Webhook Endpoints**
 
@@ -264,7 +264,7 @@ python worker.py
 
 ---
 
-## 📚 Core Dependencies
+## Core Dependencies
 
 | Library                                                      | Version | Purpose                               |
 | ------------------------------------------------------------ | ------- | ------------------------------------- |
@@ -278,9 +278,9 @@ python worker.py
 
 ---
 
-## 🔑 Detailed Setup Guides
+## Detailed Setup Guides
 
-### 📱 **WhatsApp Cloud API Setup**
+### **WhatsApp Cloud API Setup**
 
 1. **Create Meta App:**
 
@@ -304,7 +304,7 @@ python worker.py
    - Send a test message from WhatsApp Business API Test Number
    - Check logs to confirm webhook is receiving messages
 
-### 🤖 **Groq AI Configuration**
+### **Groq AI Configuration**
 
 1. **Get API Key:**
 
@@ -318,7 +318,7 @@ python worker.py
    GROQ_API_KEY=gsk_your_api_key_here
    ```
 
-### 🗄️ **MongoDB Atlas Configuration**
+### **MongoDB Atlas Configuration**
 
 1. **Create Cluster:**
 
@@ -343,7 +343,7 @@ python worker.py
 
 ---
 
-## 🚀 Advanced Features & Customization
+## Advanced Features & Customization
 
 ### **Location Intelligence**
 
@@ -409,7 +409,7 @@ ERROR_MESSAGES = {
 
 
 
-## 📊 Performance & Scaling
+## Performance & Scaling
 
 ### **Optimization Tips**
 
@@ -422,11 +422,10 @@ ERROR_MESSAGES = {
 
 ---
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 - **[Meta](https://developers.facebook.com/)** - WhatsApp Cloud API
 - **[Groq](https://groq.com/)** - High-performance AI inference
 - **[MongoDB](https://mongodb.com/)** - Flexible document database
 - **[Flask](https://flask.palletsprojects.com/)** - Lightweight web framework
 - **Open Source Community** - For inspiration and support
-
