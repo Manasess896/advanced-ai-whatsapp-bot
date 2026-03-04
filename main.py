@@ -487,11 +487,10 @@ def webhook():
 
                             is_new_user = is_first_time_user(user_id)
                             
-                            #nly detect location for new users (phone numbers don't change countries)
-                            if is_new_user:
-                                location_data = detect_user_location(user_id)
-                                if location_data:
-                                    save_user_location(user_id, location_data, user_name)
+                            # Detect and update location stats for every interaction
+                            location_data = detect_user_location(user_id)
+                            if location_data:
+                                save_user_location(user_id, location_data, user_name)
                             
                             if is_new_user:
                                 logging.info("New user registered")

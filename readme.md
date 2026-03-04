@@ -35,21 +35,7 @@ A WhatsApp bot powered by Groq API and open ai model, featuring intelligent conv
 - **Secure Error Handling:** No sensitive data leaked in error messages
 - **Legal Framework:** Comprehensive Terms of Service included
 
-### **Management & Monitoring**
 
-- **Real-time Statistics:** Track messages, users, and engagement
-- **User Management:** Individual user profiles and conversation stats
-- **Admin Endpoints:** Built-in admin dashboard for monitoring
-- **Comprehensive Logging:** Detailed logs with error tracking
-
-### **Developer Experience**
-
-- **Easy Deployment:** One-click deployment to Heroku, Railway, or any cloud platform
-- **Development Mode:** Auto-restart functionality for seamless development
-- **Environment Configuration:** Secure environment variable management
-- **Modular Design:** Clean, maintainable code structure
-
----
 
 ## Prerequisites
 
@@ -257,10 +243,6 @@ python worker.py
 - `GET /privacy` - Privacy policy page
 - `GET /terms` - Terms of service page
 
-### **Admin Functions** (Coming Soon)
-
-- `GET /admin/stats` - Bot usage statistics
-- `GET /admin/users` - User management panel
 
 ---
 
@@ -418,14 +400,11 @@ ERROR_MESSAGES = {
 - **Caching:** Consider Redis for high-traffic deployments
 - **Rate Limiting:** Implement request throttling for production
 
-### **Monitoring & Analytics**
-
----
 
 ## Acknowledgments
 
 - **[Meta](https://developers.facebook.com/)** - WhatsApp Cloud API
 - **[Groq](https://groq.com/)** - High-performance AI inference
 - **[MongoDB](https://mongodb.com/)** - Flexible document database
-- **[Flask](https://flask.palletsprojects.com/)** - Lightweight web framework
-- **Open Source Community** - For inspiration and support
+
+
