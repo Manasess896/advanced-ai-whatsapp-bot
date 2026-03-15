@@ -30,7 +30,7 @@ GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 MONGO_URI = os.getenv("MONGODB_URI")
 DATABASE_NAME = os.getenv("DATABASE_NAME")
 COLLECTION_NAME = os.getenv("COLLECTION_NAME")#import collection for storing the conversations this is set in .env file 
-LOCATION_COLLECTION_NAME = "user_locations"  # a collection for storing location data
+LOCATION_COLLECTION_NAME = "user_locations"  # a collection for storing location data i made a matsake this collection also saves user conversations in the future i will saparate them 
 
 BOT_NAME = os.getenv("BOT_NAME")
 CREATOR_NAME = os.getenv("CREATOR_NAME")
@@ -361,7 +361,7 @@ def is_first_time_user(user_id: str) -> bool:
         return True
 
 def build_welcome_message(user_name: str | None = None) -> str:
-   # Build welcome message for first-time users
+   # Build welcome message for first-time users containing their name first lunguage used by the user determines thelunguage bot will use 
     name = user_name or "there"
     return f"""👋 Hello {name}! Welcome to {BOT_NAME}!
 
@@ -412,6 +412,9 @@ def build_system_prompt(user_id: str = None) -> str:
     s += f"- CRITICAL: When users ask about privacy policy, ALWAYS respond with: {PRIVACY_URL}\n"
     s += f"- CRITICAL: When users ask about terms of service, ALWAYS respond with: {TERMS_URL}\n"
     s += "- Never create fake GitHub links or alternative URLs for legal documents\n"
+    s += "- When users ask how to create their own WhatsApp bot, use the Meta API, or build a similar system, first give a short high-level explanation, then clearly recommend they contact the creator for hands-on help.\n"
+    s += f"- For creator contact, ALWAYS suggest these options: WhatsApp: {CREATOR_WHATSAPP} and contact form: https://manases.space/contact-us\n"
+    s += "- Do not invent other contact channels; only use the WhatsApp number and contact form above when recommending help with bot creation or Meta API navigation.\n"
     return s
 
 def generate_ai_reply_with_context(user_id: str, user_text: str) -> str:
@@ -487,7 +490,7 @@ def webhook():
 
                             is_new_user = is_first_time_user(user_id)
                             
-                            # Detect and update location stats for every interaction
+                            # Detect and update location stats for every interaction this helpsin logging 
                             location_data = detect_user_location(user_id)
                             if location_data:
                                 save_user_location(user_id, location_data, user_name)
@@ -495,7 +498,7 @@ def webhook():
                             if is_new_user:
                                 logging.info("New user registered")
 
-                            # save user message to database
+                            # save user message to database 
                             saved = save_message_to_db(
                                 user_id=user_id,
                                 message=text_body,
