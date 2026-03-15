@@ -361,11 +361,15 @@ def is_first_time_user(user_id: str) -> bool:
         return True
 
 def build_welcome_message(user_name: str | None = None) -> str:
-   # Build welcome message for first-time users containing their name first lunguage used by the user determines thelunguage bot will use 
+   # Build welcome message for first-time users containing their name
     name = user_name or "there"
     return f"""👋 Hello {name}! Welcome to {BOT_NAME}!
 
 By messaging me, you have agreed to our Terms of Service {TERMS_URL} and Privacy Policy {PRIVACY_URL}.
+
+If you ever want help to  create your own WhatsApp bot or need help with the Meta API, you can contact the creator directly:
+- WhatsApp: {CREATOR_WHATSAPP}
+- Contact form: https://manases.space/contact-us
 """
 
 def build_system_prompt(user_id: str = None) -> str:
