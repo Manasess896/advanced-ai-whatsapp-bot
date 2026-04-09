@@ -471,8 +471,8 @@ def generate_ai_reply_with_context(user_id: str, user_text: str = "", media_part
 
     except Exception as e:
         error_msg = str(e)
-        if "429" in error_msg or "RESOURCE_EXHAUSTED" in error_msg.upper() or "QUOTA" in error_msg.upper():
-            logging.warning("Gemini 429 error detected. Switching to fallback Groq AI.")
+        if "429" in error_msg or "RESOURCE_EXHAUSTED" in error_msg.upper() or "QUOTA" in error_msg.upper() or "503" in error_msg or "SERVICE UNAVAILABLE" in error_msg.upper():
+            logging.warning("Gemini 429/503 error detected. Switching to fallback Groq AI.")
             # Format history for fallback
             fallback_history = []
             for h in history:
@@ -587,11 +587,9 @@ def webhook():
                                 phone_number=user_phone
                             )
                             
-                            # trigger background profile update only every 5 messages to save Gemini quota
+                            # trigger background profile update on every message as requested
                             if collection is not None:
-                                msg_count = collection.count_documents({"user_id": user_id, "sender_type": "user"})
-                                if msg_count % 1 == 1:
-                                    threading.Thread(target=update_user_profile_in_background, args=(user_id, text_body, db, ai_client)).start()
+                                threading.Thread(target=update_user_profile_in_background, args=(user_id, text_body, db, ai_client)).start()
 
                         elif msg_type == "image":
                             #handle images using Gemini

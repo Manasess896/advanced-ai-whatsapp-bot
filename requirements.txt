@@ -6,3 +6,4 @@ pymongo
 dnspython
 gunicorn
 google-genai
+Pillow

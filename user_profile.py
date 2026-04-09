@@ -31,7 +31,7 @@ def update_user_profile_in_background(user_id: str, new_message: str, db, ai_cli
 
         #using gemini-1.5-flash for background tasks if you want separate quotas, but sticking to your default use gemini-2.5-flash or whatever you prefer
         response = ai_client.models.generate_content(
-            model="gemini-1.5-flash",
+            model="gemini-2.5-flash",
             contents=prompt,
             config=types.GenerateContentConfig(
                 system_instruction=system_instruction,
