@@ -1,21 +1,18 @@
+# WhatsApp Bot with memory and meta api integration
 import os
-from dotenv import load_dotenv
-load_dotenv(override=True)  
 import requests
 import logging
 import json
 from flask import Flask, request, jsonify
-from google import genai
-from google.genai import types
+from dotenv import load_dotenv
+from groq import Groq
 from pymongo import MongoClient
 from pymongo.errors import ConnectionFailure, ServerSelectionTimeoutError
 from datetime import datetime, timezone
 import traceback
 import uuid
-import media
-import threading
-from user_profile import update_user_profile_in_background
-from fallback import generate_fallback_reply_with_context
+
+load_dotenv(override=True)  # Force reload env variables
 
 app = Flask(__name__)
 logging.basicConfig(
@@ -28,7 +25,7 @@ WHATSAPP_TOKEN = os.getenv("WHATSAPP_TOKEN")
 PHONE_NUMBER_ID = os.getenv("PHONE_NUMBER_ID")
 VERIFY_TOKEN = os.getenv("VERIFY_TOKEN")
 
-GROQ_API_KEY = os.getenv("GROQ_API_KEY") # No longer needed
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
 MONGO_URI = os.getenv("MONGODB_URI")
 DATABASE_NAME = os.getenv("DATABASE_NAME")
@@ -41,7 +38,8 @@ CREATOR_EMAIL = os.getenv("CREATOR_EMAIL")
 CREATOR_WHATSAPP = os.getenv("CREATOR_WHATSAPP")
 PRIVACY_URL = os.getenv("PRIVACY_URL")
 TERMS_URL = os.getenv("TERMS_URL")
-MEMORY_LIMIT = int(os.getenv("MEMORY_LIMIT", "4"))  # Drastically reduced for background profile usage
+MEMORY_LIMIT = int(os.getenv("MEMORY_LIMIT", "30"))  # messages (user+bot) to keep for prompt
+
 
 ERROR_MESSAGES = {
     "ERR100": "I encountered a problem when processing your request. Please tell the developer: ERR100.",
@@ -55,12 +53,18 @@ def dev_log(exc: Exception, code: str):
     logging.error("Developer error %s: %s", code, exc)
     logging.error(traceback.format_exc())
 
-#start AI cervice
-ai_client = media.gemini_client
-if ai_client:
-    logging.info("200 AI service ready (Gemini)")
+
+ai_client = None
+if GROQ_API_KEY:
+    try:
+        ai_client = Groq(api_key=GROQ_API_KEY)
+        logging.info("200 AI service ready")
+    except Exception as e:
+        dev_log(e, "ERR400")
+        ai_client = None
+        logging.error("AI service failed")
 else:
-    logging.error("No Gemini API key configured in media")
+    logging.error("No AI API key configured")
 
 mongo_client = None
 db = None
@@ -87,7 +91,7 @@ if MONGO_URI:
             retryWrites=True
         )
         
-        #test   the connection
+        # testing  the connection
         mongo_client.admin.command('ping')
         db = mongo_client[DATABASE_NAME]
         collection = db[COLLECTION_NAME]
@@ -109,7 +113,7 @@ else:
 
 
 def make_user_safe_error(code_key: str) -> str:
-    #return a short message for the user while logging details to dev logs
+    """Return a short message for the user while logging details to dev logs."""
     return ERROR_MESSAGES.get(code_key, "An error occurred. Please inform the developer.")
 
 def detect_user_location(phone_number: str) -> dict | None:
@@ -152,7 +156,7 @@ def save_user_location(user_id: str, location_data: dict, user_name: str = None)
     try:
         # Cceck if user location already exists
         existing_location = location_collection.find_one({"user_id": user_id})
-        #set user doc in db
+        
         location_doc = {
             "user_id": user_id,
             "user_name": user_name,
@@ -168,13 +172,13 @@ def save_user_location(user_id: str, location_data: dict, user_name: str = None)
         }
         
         if existing_location:
-            #update existing location 
+            # Update existing location
             location_collection.update_one(
                 {"user_id": user_id},
                 {"$set": location_doc}
             )
         else:
-            #insert new location if has non
+            # Insert new location
             location_collection.insert_one(location_doc)
         
         logging.info("200 Location extracted")
@@ -201,7 +205,7 @@ def get_user_location(user_id: str) -> dict | None:
         return None
 
 def send_message(to: str, text: str) -> bool:
-   #Send a text message via whatsApp cloud API returns True on success
+    """Send a text message via WhatsApp Cloud API. Returns True on success."""
     if not WHATSAPP_TOKEN or not PHONE_NUMBER_ID:
         logging.error("WhatsApp token or phone id missing.")
         return False
@@ -271,6 +275,7 @@ def get_conversation_history(user_id: str, limit: int | None = None) -> list:
         
         cursor = collection.find(query).sort("timestamp", -1).limit(actual_limit)
         records = list(cursor)
+        
        
         history = []
         for r in reversed(records):
@@ -356,7 +361,7 @@ def is_first_time_user(user_id: str) -> bool:
         return True
 
 def build_welcome_message(user_name: str | None = None) -> str:
-   #build welcome message for first-time users containing their name
+   # Build welcome message for first-time users containing their name
     name = user_name or "there"
     return f"""👋 Hello {name}! Welcome to {BOT_NAME}!
 
@@ -369,28 +374,10 @@ If you ever want help to  create your own WhatsApp bot or need help with the Met
 
 def build_system_prompt(user_id: str = None) -> str:
     #build the system prompt that instructs the assistant about identity and user context
-    try:
-        #instruction.md contains the instructions given to the model we are interacting with so you can update the instructions there
-        with open("prompts/instructions.md", "r", encoding="utf-8") as f:
-            base_template = f.read()
-    except Exception:
-        base_template = "You are {BOT_NAME}, a helpful WhatsApp assistant created by {CREATOR_NAME}.\n"
-
-    s = base_template.format(BOT_NAME=BOT_NAME, CREATOR_NAME=CREATOR_NAME)
-    
+    s = f"You are {BOT_NAME}, a helpful WhatsApp assistant created by {CREATOR_NAME}.\n\n"
     if user_id:
-        #inject background dynamically fetched profile
-        if db is not None:
-            try:
-                profile_doc = db["user_profiles"].find_one({"user_id": user_id})
-                if profile_doc and profile_doc.get("profile_summary"):
-                    s += f"\nUSER PROFILE & HISTORY:\n"
-                    s += f"- {profile_doc.get('profile_summary')}\n"
-            except Exception as e:
-                logging.error("Failed to inject user profile into prompt: %s", e)
-
         location_data = get_user_location(user_id)
-        s += f"\nUSER CONTEXT:\n"
+        s += f"USER CONTEXT:\n"
         s += f"- Current user's phone number: {user_id}\n"
         if location_data:
             s += f"- User's location: {location_data['country_name']} (Code: {location_data['country_code']})\n"
@@ -398,97 +385,73 @@ def build_system_prompt(user_id: str = None) -> str:
             s += f"- Provide responses relevant to {location_data['country_name']} culture and context\n"
         else:
             s += f"- Use the phone number country code to provide location-relevant information\n"
-        s += f"- Tailor responses to be culturally and regionally appropriate\n"
+        s += f"- Tailor responses to be culturally and regionally appropriate\n\n"
+    s += "BOT BEHAVIOR:\n"
+    s += "- Keep replies concise (1-3 sentences) suitable for WhatsApp\n"
+    s += "- Use conversation history for context when relevant\n"
+    s += "- Be helpful, friendly, and informative\n"
+    s += "- Provide location-aware responses based on user's country code\n"
+    s += "- Don't invent facts about users or make assumptions beyond their phone number location\n\n"
+    
+    s += "PRIVACY & SECURITY RULES:\n"
+    s += "- NEVER share information about other users or conversations\n"
+    s += "- ONLY discuss data related to the current user\n"
+    s += "- Don't reveal sensitive technical details \n"
+    s += "- Dont talk about the bot database or sensitive matters concerning the bot \n\n"
+    
+    s += "LEGAL INFORMATION & LINKS:\n"
+    s += f"- Privacy Policy URL: {PRIVACY_URL}\n"
+    s += f"- Terms of Service URL: {TERMS_URL}\n"
+    s += "- IMPORTANT: Always use these EXACT URLs when users ask about privacy or terms\n"
+    s += "- Do NOT create or suggest alternative links - only use the URLs provided above\n"
+    s += "- When asked about privacy policy, respond with the Privacy Policy URL\n"
+    s += "- When asked about terms of service, respond with the Terms of Service URL\n"
+    s += "- Users automatically agree to terms by messaging the bot\n"
+    s += f"- For support or data deletion requests, direct users to contact: {CREATOR_EMAIL}\n\n"
+    
+    s += "GUIDELINES:\n"
+    s += "- Don't repeat old messages verbatim from history\n"
+    s += "- For technical questions, keep answers general and user-focused\n"
+    s += "- Direct data deletion requests to contact the developer via appropriate channels\n"
+    s += f"- CRITICAL: When users ask about privacy policy, ALWAYS respond with: {PRIVACY_URL}\n"
+    s += f"- CRITICAL: When users ask about terms of service, ALWAYS respond with: {TERMS_URL}\n"
+    s += "- Never create fake GitHub links or alternative URLs for legal documents\n"
+    s += "- When users ask how to create their own WhatsApp bot, use the Meta API, or build a similar system, first give a short high-level explanation, then clearly recommend they contact the creator for hands-on help.\n"
+    s += f"- For creator contact, ALWAYS suggest these options: WhatsApp: {CREATOR_WHATSAPP} and contact form: https://manases.space/contact-us\n"
+    s += "- Do not invent other contact channels; only use the WhatsApp number and contact form above when recommending help with bot creation or Meta API navigation.\n"
     return s
 
-def get_legal_links() -> dict:
-    #gets the exact privacy policy and terms of service urls for the bot  use this whenever the user asks for legal links, terms, or privacy policies 
-    return {"privacy_policy": PRIVACY_URL, "terms_of_service": TERMS_URL}
-
-def get_creator_contact() -> dict:
-    #gets the creator's direct contact information. Use this for support requests, data deletion requests, or when the user asks to build their own bot."""
-    return {"whatsapp": CREATOR_WHATSAPP, "contact_form": "https://manases.space/contact-us", "email": CREATOR_EMAIL}
-
-def generate_ai_reply_with_context(user_id: str, user_text: str = "", media_part=None) -> str:
-    #fallback default
-    default_reply = f"Echo: {user_text}" if user_text else "Media received."
+def generate_ai_reply_with_context(user_id: str, user_text: str) -> str:
+    # fallback default
+    default_reply = f"Echo: {user_text}"
 
     if not ai_client:
         return default_reply
 
     try:
         history = get_conversation_history(user_id, limit=MEMORY_LIMIT)
-        system_prompt = build_system_prompt(user_id)   
-        contents = []
+        system_prompt = build_system_prompt(user_id)
+        messages = [{"role": "system", "content": system_prompt}]
         for h in history:
-            role = "user" if h["sender_type"] == "user" else "model"
+            role = "user" if h["sender_type"] == "user" else "assistant"
             if h.get("conversation_id") == f"chat_{user_id}":
-                contents.append({"role": role, "parts": [{"text": h["message"]}]})
-        
-        user_parts = []
-        if user_text:
-            user_parts.append({"text": user_text})
-        if media_part:
-            user_parts.append(media_part)
-            
-        contents.append({"role": "user", "parts": user_parts})
-        
-        bot_tools = [get_legal_links, get_creator_contact]
+                messages.append({"role": role, "content": h["message"]})
+        messages.append({"role": "user", "content": user_text})
 
-        completion = ai_client.models.generate_content(
-            model="gemini-2.5-flash",
-            contents=contents,
-            config=types.GenerateContentConfig(
-                system_instruction=system_prompt,
-                tools=bot_tools
-            )
+        completion = ai_client.chat.completions.create(
+            model="openai/gpt-oss-20B",
+            messages=messages,
         )
-        
-        if completion.function_calls:
-            tool_responses = []
-            for function_call in completion.function_calls:
-                if function_call.name == "get_legal_links":
-                    tool_responses.append(types.Part.from_function_response(name=function_call.name, response=get_legal_links()))
-                elif function_call.name == "get_creator_contact":
-                    tool_responses.append(types.Part.from_function_response(name=function_call.name, response=get_creator_contact()))
-            
-            #add the model's function call to history
-            contents.append(completion.candidates[0].content)
-            #add our responses
-            contents.append({"role": "user", "parts": tool_responses})
-            
-            #generate the final response
-            completion = ai_client.models.generate_content(
-                model="gemini-2.5-flash",
-                contents=contents,
-                config=types.GenerateContentConfig(
-                    system_instruction=system_prompt
-                )
-            )
-
-        ai_text = completion.text.strip()
+        ai_text = completion.choices[0].message.content.strip()  # type: ignore
         return ai_text or default_reply
 
     except Exception as e:
-        error_msg = str(e)
-        if "429" in error_msg or "RESOURCE_EXHAUSTED" in error_msg.upper() or "QUOTA" in error_msg.upper():
-            logging.warning("Gemini 429 error detected. Switching to fallback Groq AI.")
-            # Format history for fallback
-            fallback_history = []
-            for h in history:
-                fallback_history.append({
-                    "sender_type": h.get("sender_type"),
-                    "conversation_id": h.get("conversation_id"),
-                    "message": h.get("message", "")
-                })
-            return generate_fallback_reply_with_context(user_id, user_text or "Media received.", fallback_history, system_prompt)
-
+        dev_log(e, "ERR400")
         return make_user_safe_error("ERR400")
 
-@app.route("/", methods=["GET"])
 @app.route("/webhook", methods=["GET"])
 def verify():
-    #verification endpoint for WhatsApp webhoo
+    #Verification endpoint for WhatsApp webhoo
     token = request.args.get("hub.verify_token")
     challenge = request.args.get("hub.challenge")
     if token == VERIFY_TOKEN:
@@ -497,10 +460,9 @@ def verify():
     logging.error("Invalid verification token")
     return "Invalid verification token", 403
 
-@app.route("/", methods=["POST"])
 @app.route("/webhook", methods=["POST"])
 def webhook():
-    #webhook entrypoint from WhatsApp
+    """Main webhook entrypoint from WhatsApp."""
     data = request.get_json(silent=True) or {}
     logging.info("200 Received message")
 
@@ -532,7 +494,7 @@ def webhook():
 
                             is_new_user = is_first_time_user(user_id)
                             
-                            #detect and update location stats for every interaction 
+                            # Detect and update location stats for every interaction this helpsin logging 
                             location_data = detect_user_location(user_id)
                             if location_data:
                                 save_user_location(user_id, location_data, user_name)
@@ -540,7 +502,7 @@ def webhook():
                             if is_new_user:
                                 logging.info("New user registered")
 
-                            #save user message to database 
+                            # save user message to database 
                             saved = save_message_to_db(
                                 user_id=user_id,
                                 message=text_body,
@@ -553,7 +515,7 @@ def webhook():
                                 send_message(user_id, make_user_safe_error("ERR100"))
                                 continue
 
-                            #send welcome message to new users
+                            # send welcome message to new users
                             if is_new_user:
                                 welcome_msg = build_welcome_message(user_name)
                                 send_message(user_id, welcome_msg)
@@ -569,15 +531,10 @@ def webhook():
                                 
 
 
-                            #generate reply
+                            # generate AI reply
                             reply_text = generate_ai_reply_with_context(user_id, text_body)
 
-                            #send standard text reply to user
-                            send_ok = send_message(user_id, reply_text)
-                            if not send_ok:
-                                logging.error("Failed to send WhatsApp message to %s", user_id)
-
-                            #save bot reply to database
+                            # save bot reply to database
                             save_message_to_db(
                                 user_id=user_id,
                                 message=reply_text,
@@ -586,100 +543,17 @@ def webhook():
                                 user_name=user_name,
                                 phone_number=user_phone
                             )
-                            
-                            # trigger background profile update only every 5 messages to save Gemini quota
-                            if collection is not None:
-                                msg_count = collection.count_documents({"user_id": user_id, "sender_type": "user"})
-                                if msg_count % 1 == 1:
-                                    threading.Thread(target=update_user_profile_in_background, args=(user_id, text_body, db, ai_client)).start()
 
-                        elif msg_type == "image":
-                            #handle images using Gemini
-                            image_info = message.get("image", {})
-                            media_id = image_info.get("id")
-                            caption = image_info.get("caption", "Describe this image")
-                            
-                            #check rate limit for sending media
-                            if not media.check_media_rate_limit(user_id, collection):
-                                send_message(user_id, f"You have reached your daily limit for media processing ({media.MEDIA_LIMIT} per day). Please try again tomorrow.")
-                                continue
-                                
-                            send_message(user_id, "Analyzing your image, please wait...")
-                            
-                            image_part = media.get_media_part(media_id)
-                            if image_part:
-                                processing_result = generate_ai_reply_with_context(
-                                    user_id=user_id, 
-                                    user_text=f"[User sent an image with caption: {caption}. Consider the image and respond in context.]", 
-                                    media_part=image_part
-                                )
-                            else:
-                                processing_result = "Sorry, I couldn't download the image."
-                            
-                            #save to message history
-                            save_message_to_db(user_id, f"[IMAGE] {caption}", "user", "image")
-                            save_message_to_db(user_id, processing_result, "bot", "text")
-                            
-                            send_message(user_id, processing_result)
-
-                        elif msg_type == "audio":
-                            audio_info = message.get("audio", {})
-                            media_id = audio_info.get("id")
-                            
-                            if not media.check_media_rate_limit(user_id, collection):
-                                send_message(user_id, f"You have reached your daily limit for media processing ({media.MEDIA_LIMIT} per day). Please try again tomorrow.")
-                                continue
-                            
-                            send_message(user_id, "Listening to your voice note...")
-                            
-                            audio_part = media.get_media_part(media_id)
-                            if audio_part:
-                                processing_result = generate_ai_reply_with_context(
-                                    user_id=user_id, 
-                                    user_text="[User sent a voice note. Respond to what they said in the context of the conversation]", 
-                                    media_part=audio_part
-                                )
-                            else:
-                                processing_result = "Sorry, I couldn't download or listen to the audio."
-                            
-                            #save to message history
-                            save_message_to_db(user_id, "[AUDIO MESSAGE]", "user", "audio")
-                            save_message_to_db(user_id, processing_result, "bot", "text")
-                            
-                            send_message(user_id, processing_result)
-
-                        elif msg_type == "document":
-                            doc_info = message.get("document", {})
-                            media_id = doc_info.get("id")
-                            filename = doc_info.get("filename", "document")
-                            
-                            if not media.check_media_rate_limit(user_id, collection):
-                                send_message(user_id, f"You have reached your daily limit for media processing ({media.MEDIA_LIMIT} per day). Please try again tomorrow.")
-                                continue
-                            
-                            send_message(user_id, f"Reading {filename}...")
-                            
-                            doc_part = media.get_media_part(media_id)
-                            if doc_part:
-                                processing_result = generate_ai_reply_with_context(
-                                    user_id=user_id, 
-                                    user_text=f"[User sent a document named {filename}. Summarize or respond to its contents in the context of our chat.]", 
-                                    media_part=doc_part
-                                )
-                            else:
-                                processing_result = "Sorry, I couldn't download or analyze the document."
-                            
-                            #save to message history
-                            save_message_to_db(user_id, f"[DOCUMENT: {filename}]", "user", "document")
-                            save_message_to_db(user_id, processing_result, "bot", "text")
-                            
-                            send_message(user_id, processing_result)
+                            # send reply to user
+                            send_ok = send_message(user_id, reply_text)
+                            if not send_ok:
+                                logging.error("Failed to send WhatsApp message to %s", user_id)
 
                         else:
-                            #handle other non-text messages
+                            # handle non-text messages
                             save_message_to_db(user_id, f"[{msg_type.upper()}]", "user", msg_type)
-                            fallback = (f"I currently support text, image, audio, and document files! "
-                                        f"I'll handle this {msg_type} as a placeholder.")
+                            fallback = ("I currently support text messages only. "
+                                        "Please send your request as text.")
                             send_message(user_id, fallback)
 
                 statuses = value.get("statuses") or []
@@ -698,6 +572,7 @@ def webhook():
         error_id = str(uuid.uuid4())[:8]
         dev_log(e, f"WEBHOOK_ERR_{error_id}")
         return jsonify({"status": "error", "error": f"Internal error {error_id}"}), 500
+
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
