@@ -1,11 +1,20 @@
 import logging
 import time
-from google.genai import types
+import os
+from groq import Groq
 
 logger = logging.getLogger(__name__)
 
-def update_user_profile_in_background(user_id: str, new_message: str, db, ai_client):
-    if db is None or ai_client is None:
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+groq_client = None
+if GROQ_API_KEY:
+    try:
+        groq_client = Groq(api_key=GROQ_API_KEY)
+    except Exception as e:
+        logger.error(f"Groq setup failed for user profile: {e}")
+
+def update_user_profile_in_background(user_id: str, new_message: str, db, ai_client=None, user_name: str | None = None, location_data: dict | None = None):
+    if db is None or groq_client is None:
         return
 
     #add a slight delay so it doesn't fire at the exact same millisecond as the main chat response
@@ -22,24 +31,26 @@ def update_user_profile_in_background(user_id: str, new_message: str, db, ai_cli
 
         system_instruction = (
             "You are a user profiler. Read the user's current summary and recent message. "
-            "Write a single, concise paragraph (max 50 words) summarizing their persona, name, interests, and ongoing topics. "
+            "Write a single, concise paragraph (max 50 words) summarizing their persona, name, interests, ongoing topics, and cultural context based on their location. "
             "Incorporate new facts from the recent messages into the existing summary. "
             "Do not use bullet points or JSON. Only output the paragraph."
         )
 
-        prompt = f"Current Profile Summary:\n{current_profile_text}\n\nNew Message from User:\n{new_message}"
+        country = location_data.get('country_name', 'Unknown') if location_data else 'Unknown'
+        prompt = f"Current Profile Summary:\n{current_profile_text}\n\nUser Name: {user_name or 'Unknown'}\nLocation (Country): {country}\n\nNew Message from User:\n{new_message}"
 
-        #using gemini-1.5-flash for background tasks if you want separate quotas, but sticking to your default use gemini-2.5-flash or whatever you prefer
-        response = ai_client.models.generate_content(
-            model="gemini-2.5-flash",
-            contents=prompt,
-            config=types.GenerateContentConfig(
-                system_instruction=system_instruction,
-                temperature=0.3
-            )
+        messages = [
+            {"role": "system", "content": system_instruction},
+            {"role": "user", "content": prompt}
+        ]
+
+        completion = groq_client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=messages,
+            temperature=0.3
         )
 
-        new_profile_summary = response.text.strip()
+        new_profile_summary = completion.choices[0].message.content.strip()
 
         #save generated summary to DB
         profile_collection.update_one(

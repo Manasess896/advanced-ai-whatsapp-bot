@@ -24,7 +24,7 @@ This project provides an advanced WhatsApp bot capable of maintaining context-aw
 
 ## Key Features
 
-- **Advanced AI :** Powered by Google's Gemini models for primary inference, backed by Groq's high-performance LLaMA models as a fallback.
+- **Advanced AI :** Powered by Google's Gemini models for primary inference, backed by Groq's high-performance LLaMA models for robust fallback and fast, dedicated background user profiling.
 - **Context-aware conversations:** Remembers conversation history for natural dialogue.
 - **Smart memory management:** Configurable message history limits for optimal performance.
 - **Location detection:** Automatically identifies the user's country from their phone number to provide location-aware responses.
@@ -116,7 +116,7 @@ DEBUG_LOGS=false
    GEMINI_API_KEY=your_gemini_api_key_here
    ```
 
-**Groq AI Configuration (Fallback)**
+**Groq AI Configuration (Fallback & Profiling)**
 1. **Get API Key:**
    - Visit Groq Console
    - Sign up for free account

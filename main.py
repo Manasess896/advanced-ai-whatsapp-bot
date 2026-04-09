@@ -589,7 +589,7 @@ def webhook():
                             
                             # trigger background profile update on every message as requested
                             if collection is not None:
-                                threading.Thread(target=update_user_profile_in_background, args=(user_id, text_body, db, ai_client)).start()
+                                threading.Thread(target=update_user_profile_in_background, args=(user_id, text_body, db, ai_client, user_name, location_data)).start()
 
                         elif msg_type == "image":
                             #handle images using Gemini
